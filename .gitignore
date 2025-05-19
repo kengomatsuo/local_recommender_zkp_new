@@ -1,0 +1,7 @@
+node_modules
+circomlib
+circuits
+keys
+*.zkey
+*.sym
+*.ptau
