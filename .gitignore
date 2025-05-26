@@ -1,7 +1,13 @@
 node_modules
 circomlib
-circuits
-keys
-*.zkey
+
+# Ignore circuit build artifacts but not wasm/zkey
+circuits/*
+!circuits/auth_js/
+!circuits/auth_js/auth.wasm
+
+keys/*
+!keys/circuit_final.zkey
+
 *.sym
 *.ptau
