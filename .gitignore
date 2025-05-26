@@ -6,6 +6,7 @@ circuits/*.sym
 circuits/*.js
 circuits/*.json
 !circuits/auth_js/auth.wasm
+dist/
 
 keys/*.zkey
 !keys/circuit_final.zkey
