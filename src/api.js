@@ -46,8 +46,9 @@ function hexToBits(hexStr, bitLength = 256) {
  * Generates a ZKP proof that the user is in the allowed list.
  */
 export async function generateZKPProof(privKey, merkleRoot, pathElements, pathIndices) {
-  const wasmPath = "/circuits/auth_js/auth.wasm";
-  const zkeyPath = "/keys/circuit_final.zkey";
+  const wasmPath = `${import.meta.env.BASE_URL}circuits/auth_js/auth.wasm`;
+  const zkeyPath = `${import.meta.env.BASE_URL}keys/circuit_final.zkey`;
+
 
   try {
     console.log("Preparing ZKP inputs...");

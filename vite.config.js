@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     viteStaticCopy({
       targets: [
-        { src: 'circuits/auth_js/auth.wasm', dest: 'circuits' },
+        { src: 'circuits/auth_js/auth.wasm', dest: 'circuits/auth_js' },
         { src: 'keys/circuit_final.zkey', dest: 'keys' }
       ]
     })
