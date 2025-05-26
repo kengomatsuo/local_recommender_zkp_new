@@ -1,9 +1,18 @@
 import { defineConfig } from 'vite';
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
   base: '/local-recommender-zkp/',
   root: '.',
   publicDir: 'public',
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        { src: 'circuits/auth_js/auth.wasm', dest: 'circuits' },
+        { src: 'keys/circuit_final.zkey', dest: 'keys' }
+      ]
+    })
+  ],
   server: {
     port: 5173,
     open: true
