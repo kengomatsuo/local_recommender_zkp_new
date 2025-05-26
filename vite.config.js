@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
-  base: '/local-recommender-zkp/',
+  base: '/local_recommender_zkp_new/',
   root: '.',
   publicDir: 'public',
   plugins: [
