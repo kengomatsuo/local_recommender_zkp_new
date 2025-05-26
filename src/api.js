@@ -2,6 +2,41 @@
 // Handles all API calls for posts and authentication
 import { groth16 } from "snarkjs";
 
+import { get, set } from "idb-keyval";
+
+async function loadZkey() {
+  let cached = await get("circuit_final.zkey");
+
+  if (cached) {
+    console.log("Loaded .zkey from IndexedDB cache");
+    return cached;
+  }
+
+  console.log("Fetching .zkey from network...");
+  const response = await fetch(
+    `${import.meta.env.BASE_URL}keys/circuit_final.zkey`
+  );
+  const arrayBuffer = await response.arrayBuffer();
+
+  await set("circuit_final.zkey", arrayBuffer);
+  return arrayBuffer;
+}
+
+async function loadWasm() {
+  let cached = await get("auth.wasm");
+  if (cached) {
+    console.log("Loaded .wasm from IndexedDB cache");
+    return new Uint8Array(cached);
+  }
+
+  const response = await fetch(
+    `${import.meta.env.BASE_URL}circuits/auth_js/auth.wasm`
+  );
+  const buffer = await response.arrayBuffer();
+  await set("auth.wasm", buffer);
+  return new Uint8Array(buffer);
+}
+
 /**
  * Converts a hex string to a bit array of specified length
  * @param {string} hexStr - Hex string (with or without 0x prefix)
@@ -88,11 +123,15 @@ export async function generateZKPProof(privKey, merkleRoot, pathElements, pathIn
     };
 
     console.log("Generating ZKP proof with formatted inputs...");
+
+    // Load the zkey and wasm files
+    const zkeyBuffer = await loadZkey();
+    const wasmBuffer = await loadWasm();
     
     const { proof, publicSignals } = await groth16.fullProve(
       input,
-      wasmPath,
-      zkeyPath
+      wasmBuffer,
+      zkeyBuffer
     );
     
     console.log("ZKP proof generated successfully");
