@@ -263,6 +263,7 @@ async function loadBatch() {
 
       console.log("ZKP proof generated successfully:", auth);
       const data = await fetchPosts(params, auth);
+
       // Update batch state
       batch = data.posts || [];
       current = 0;

@@ -19,7 +19,7 @@ async function loadZkey() {
   const arrayBuffer = await response.arrayBuffer();
 
   await set("circuit_final.zkey", arrayBuffer);
-  return arrayBuffer;
+  return new Uint8Array(arrayBuffer);
 }
 
 async function loadWasm() {
@@ -45,14 +45,14 @@ async function loadWasm() {
  */
 function hexToBits(hexStr, bitLength = 256) {
   // Remove 0x prefix if present
-  const cleanHex = hexStr.startsWith('0x') ? hexStr.slice(2) : hexStr;
-  
+  const cleanHex = hexStr.startsWith("0x") ? hexStr.slice(2) : hexStr;
+
   // Make sure we have enough characters to extract the requested bits
   const requiredHexChars = Math.ceil(bitLength / 4);
-  const paddedHex = cleanHex.padStart(requiredHexChars, '0');
-  
+  const paddedHex = cleanHex.padStart(requiredHexChars, "0");
+
   // Convert to binary string
-  let binStr = '';
+  let binStr = "";
   for (let i = 0; i < paddedHex.length; i++) {
     // Convert each hex character to 4 bits
     const hexChar = paddedHex[i];
@@ -61,38 +61,42 @@ function hexToBits(hexStr, bitLength = 256) {
       throw new Error(`Invalid hex character: ${hexChar}`);
     }
     // Convert to 4-bit binary string and pad with leading zeros
-    binStr += nibble.toString(2).padStart(4, '0');
+    binStr += nibble.toString(2).padStart(4, "0");
   }
-  
+
   // Trim or pad to exact length
   if (binStr.length > bitLength) {
     // Take only the last `bitLength` bits
     binStr = binStr.slice(-bitLength);
   } else if (binStr.length < bitLength) {
     // Pad with leading zeros
-    binStr = binStr.padStart(bitLength, '0');
+    binStr = binStr.padStart(bitLength, "0");
   }
-  
+
   // Convert to array of 0s and 1s
-  return Array.from(binStr).map(bit => parseInt(bit, 10));
+  return Array.from(binStr).map((bit) => parseInt(bit, 10));
 }
 
 /**
  * Generates a ZKP proof that the user is in the allowed list.
  */
-export async function generateZKPProof(privKey, merkleRoot, pathElements, pathIndices) {
+export async function generateZKPProof(
+  privKey,
+  merkleRoot,
+  pathElements,
+  pathIndices
+) {
   const wasmPath = `${import.meta.env.BASE_URL}circuits/auth_js/auth.wasm`;
   const zkeyPath = `${import.meta.env.BASE_URL}keys/circuit_final.zkey`;
 
-
   try {
     console.log("Preparing ZKP inputs...");
-    
+
     // Validate input formats
-    if (!privKey || typeof privKey !== 'string') {
+    if (!privKey || typeof privKey !== "string") {
       throw new Error(`Invalid privKey format: ${privKey}`);
     }
-    if (!merkleRoot || typeof merkleRoot !== 'string') {
+    if (!merkleRoot || typeof merkleRoot !== "string") {
       throw new Error(`Invalid merkleRoot format: ${merkleRoot}`);
     }
     if (!Array.isArray(pathElements) || pathElements.length === 0) {
@@ -101,25 +105,27 @@ export async function generateZKPProof(privKey, merkleRoot, pathElements, pathIn
     if (!Array.isArray(pathIndices) || pathIndices.length === 0) {
       throw new Error(`Invalid pathIndices: ${JSON.stringify(pathIndices)}`);
     }
-    
+
     // Ensure pathElements and pathIndices have the same length
     if (pathElements.length !== pathIndices.length) {
-      throw new Error(`Path elements (${pathElements.length}) and indices (${pathIndices.length}) must have same length`);
+      throw new Error(
+        `Path elements (${pathElements.length}) and indices (${pathIndices.length}) must have same length`
+      );
     }
 
     // Convert inputs to bit arrays as expected by the circuit
     const privKeyBits = hexToBits(privKey, 256);
     const rootBits = hexToBits(merkleRoot, 256);
-    
+
     // Convert path elements to bit arrays
-    const pathBits = pathElements.map(element => hexToBits(element, 256));
-    
+    const pathBits = pathElements.map((element) => hexToBits(element, 256));
+
     // Prepare input for the circuit
     const input = {
-      leaf: privKeyBits,       // bit array of private key
-      root: rootBits,          // bit array of merkle root
-      path: pathBits,          // array of bit arrays
-      direction: pathIndices   // array of 0s and 1s indicating left/right
+      leaf: privKeyBits, // bit array of private key
+      root: rootBits, // bit array of merkle root
+      path: pathBits, // array of bit arrays
+      direction: pathIndices, // array of 0s and 1s indicating left/right
     };
 
     console.log("Generating ZKP proof with formatted inputs...");
@@ -127,14 +133,16 @@ export async function generateZKPProof(privKey, merkleRoot, pathElements, pathIn
     // Load the zkey and wasm files
     const zkeyBuffer = await loadZkey();
     const wasmBuffer = await loadWasm();
-    
+
     const { proof, publicSignals } = await groth16.fullProve(
       input,
-      wasmBuffer,
-      zkeyBuffer
+      wasmPath,
+      zkeyPath
     );
-    
-    console.log("ZKP proof generated successfully");
+
+    console.log("ZKP proof generated successfully:",proof);
+    console.log("Public Signals:", JSON.stringify(publicSignals));
+    console.dir(publicSignals);
     return { proof, publicSignals };
   } catch (error) {
     console.error("Error generating ZKP proof:", error);
@@ -149,7 +157,9 @@ export async function generateZKPProof(privKey, merkleRoot, pathElements, pathIn
  * @returns {Promise<Object>} - The API response JSON
  */
 export async function fetchPosts(params = {}, auth = null) {
-  const url = new URL("https://a9b1-118-136-111-94.ngrok-free.app/api/posts");
+  const url = new URL(
+    "https://manatee-living-legally.ngrok-free.app/api/posts"
+  );
   Object.entries(params).forEach(([key, value]) => {
     if (Array.isArray(value)) {
       url.searchParams.append(key, value.join(","));
@@ -160,7 +170,9 @@ export async function fetchPosts(params = {}, auth = null) {
 
   const fetchOptions = {
     method: "GET",
-    headers: {},
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+    },
   };
 
   // If ZKP auth is provided, add it to headers or as needed
@@ -172,8 +184,14 @@ export async function fetchPosts(params = {}, auth = null) {
   }
 
   const res = await fetch(url.toString(), fetchOptions);
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
+  const text = await res.text();
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.log("🔍 Raw server response:", text);
+    throw new Error("Server returned non-JSON response");
+  }
 }
 
 // You can add more API functions here, e.g., for authentication, user profile, etc.

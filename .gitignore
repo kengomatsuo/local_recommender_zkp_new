@@ -1,12 +1,8 @@
 node_modules/
 circomlib/
-circuits/*.circom
-circuits/*.r1cs
-circuits/*.sym
-circuits/*.js
-circuits/*.json
-!circuits/auth_js/auth.wasm
 dist/
+
+circuits/auth.sym
 
 keys/*.zkey
 !keys/circuit_final.zkey

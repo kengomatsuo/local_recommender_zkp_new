@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { groth16 } from 'snarkjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,8 +22,9 @@ try {
 // Enable CORS for local dev
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-ZKP-Proof, X-ZKP-PublicSignals');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, X-ZKP-Proof, X-ZKP-PublicSignals, ngrok-skip-browser-warning');
   res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -34,6 +36,61 @@ app.use(express.json()); // Add this to parse JSON bodies
 
 // Serve static files (for index.html, main.js, etc.)
 app.use(express.static(__dirname));
+
+// Load verification key
+const vKey = JSON.parse(fs.readFileSync(path.join(__dirname, "keys", "vk.json")));
+
+// Verify ZKP before allowing post fetch
+app.use('/api/posts', async (req, res, next) => {
+  console.log("🔍 Incoming request to /api/posts");
+  console.log("Headers received:", Object.keys(req.headers));
+
+  const proofHeader = req.headers['x-zkp-proof'];
+  const publicSignalsHeader = req.headers['x-zkp-publicsignals'];
+
+  if (!proofHeader || !publicSignalsHeader) {
+    console.warn("❌ Missing ZKP headers");
+    return res.status(401).json({ error: 'Authentication required: missing proof or public signals' });
+  }
+
+  try {
+    const proof = JSON.parse(proofHeader);
+    const publicSignals = JSON.parse(publicSignalsHeader);
+
+    console.log("📦 Parsed ZKP Proof:", JSON.stringify(proof, null, 2));
+    console.log("📦 Parsed Public Signals:", JSON.stringify(publicSignals, null, 2));
+
+    const isValid = await groth16.verify(vKey, publicSignals, proof);
+
+    if (!isValid) {
+      console.warn("❌ ZKP verification failed");
+      return res.status(403).json({ error: 'Invalid authentication proof' });
+    }
+
+    const expectedRoot = "3659df8a4bfb87fbf444433c10d49d0e6434ac6c18072d9eaf14802efe00a5e5";
+
+    if (!publicSignals.length) {
+      console.warn("❌ Public signals array is empty");
+      return res.status(403).json({ error: 'Missing public root in ZKP' });
+    }
+
+    if (publicSignals[0] !== expectedRoot) {
+      console.warn("❌ Merkle root mismatch");
+      console.warn("Expected root:", expectedRoot);
+      console.warn("Received root:", publicSignals[0]);
+      return res.status(403).json({ error: 'Merkle root mismatch' });
+    }
+
+    console.log("✅ ZKP verified successfully with correct Merkle root");
+    req.authenticated = true;
+    next();
+
+  } catch (error) {
+    console.error("💥 Exception during ZKP verification:");
+    console.error(error.stack || error.message || error);
+    return res.status(400).json({ error: 'Malformed authentication data' });
+  }
+});
 
 // API endpoint for random batch of posts
 app.get('/api/posts', (req, res) => {
@@ -112,46 +169,6 @@ app.get('/api/posts', (req, res) => {
     limit,
     total: posts.length
   });
-});
-
-// Load verification key
-const vKey = JSON.parse(fs.readFileSync(path.join(__dirname, "keys", "vk.json")));
-
-// Verify ZKP before allowing post fetch
-app.use('/api/posts', async (req, res, next) => {
-  const proofHeader = req.headers['x-zkp-proof'];
-  const publicSignalsHeader = req.headers['x-zkp-publicsignals'];
-
-  if (!proofHeader || !publicSignalsHeader) {
-    console.warn("Missing ZKP headers");
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  try {
-    const proof = JSON.parse(proofHeader);
-    const publicSignals = JSON.parse(publicSignalsHeader);
-
-    const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
-
-    if (!isValid) {
-      console.warn("Invalid ZKP");
-      return res.status(403).json({ error: 'Invalid authentication proof' });
-    }
-
-    // Check Merkle root matches expected
-    const expectedRoot = "3659df8a4bfb87fbf444433c10d49d0e6434ac6c18072d9eaf14802efe00a5e5"; // Update if your root changes
-    if (publicSignals[0] !== expectedRoot) {
-      console.warn("Merkle root mismatch");
-      return res.status(403).json({ error: 'Merkle root mismatch' });
-    }
-    console.log("ZKP verified successfully");
-    // Attach verified flag
-    req.authenticated = true;
-    next();
-  } catch (error) {
-    console.error("Error verifying ZKP:", error);
-    return res.status(400).json({ error: 'Malformed authentication data' });
-  }
 });
 
 app.listen(PORT, () => {
