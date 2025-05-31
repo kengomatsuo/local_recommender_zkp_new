@@ -140,7 +140,14 @@ export async function generateZKPProof(
       zkeyPath
     );
 
-    console.log("ZKP proof generated successfully:",proof);
+    if (!proof) {
+      throw new Error("ZKP proof generation failed: No proof returned");
+    }
+    if (!publicSignals || publicSignals.length === 0) {
+      throw new Error("ZKP proof generation failed: No public signals returned");
+    }
+    console.log("ZKP proof and public signals generated successfully");
+
     console.log("Public Signals:", JSON.stringify(publicSignals));
     console.dir(publicSignals);
     return { proof, publicSignals };
