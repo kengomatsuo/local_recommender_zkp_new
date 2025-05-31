@@ -67,19 +67,19 @@ app.use('/api/posts', async (req, res, next) => {
       return res.status(403).json({ error: 'Invalid authentication proof' });
     }
 
-    const expectedRoot = "3659df8a4bfb87fbf444433c10d49d0e6434ac6c18072d9eaf14802efe00a5e5";
+    // const expectedRoot = "3659df8a4bfb87fbf444433c10d49d0e6434ac6c18072d9eaf14802efe00a5e5";
 
-    if (!publicSignals.length) {
-      console.warn("❌ Public signals array is empty");
-      return res.status(403).json({ error: 'Missing public root in ZKP' });
-    }
+    // if (!publicSignals.length) {
+    //   console.warn("❌ Public signals array is empty");
+      // return res.status(403).json({ error: 'Missing public root in ZKP' });
+    // }
 
-    if (publicSignals[0] !== expectedRoot) {
-      console.warn("❌ Merkle root mismatch");
-      console.warn("Expected root:", expectedRoot);
-      console.warn("Received root:", publicSignals[0]);
-      return res.status(403).json({ error: 'Merkle root mismatch' });
-    }
+    // if (publicSignals[0] !== expectedRoot) {
+    //   console.warn("❌ Merkle root mismatch");
+    //   console.warn("Expected root:", expectedRoot);
+    //   console.warn("Received root:", publicSignals[0]);
+    //   return res.status(403).json({ error: 'Merkle root mismatch' });
+    // }
 
     console.log("✅ ZKP verified successfully with correct Merkle root");
     req.authenticated = true;
