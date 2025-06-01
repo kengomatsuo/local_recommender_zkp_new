@@ -1,7 +1,6 @@
 // src/api.js
 // Handles all API calls for posts and authentication
 import { groth16 } from "snarkjs";
-
 import { get, set } from "idb-keyval";
 
 async function loadZkey() {
@@ -9,7 +8,9 @@ async function loadZkey() {
 
   if (cached) {
     console.log("Loaded .zkey from IndexedDB cache");
-    return cached;
+    return new Uint8Array(
+      cached instanceof ArrayBuffer ? cached : cached.buffer
+    );
   }
 
   console.log("Fetching .zkey from network...");
@@ -24,17 +25,41 @@ async function loadZkey() {
 
 async function loadWasm() {
   let cached = await get("auth.wasm");
+
   if (cached) {
     console.log("Loaded .wasm from IndexedDB cache");
-    return new Uint8Array(cached);
+    return new Uint8Array(
+      cached instanceof ArrayBuffer ? cached : cached.buffer
+    );
   }
 
   const response = await fetch(
     `${import.meta.env.BASE_URL}circuits/auth_js/auth.wasm`
   );
   const buffer = await response.arrayBuffer();
+
   await set("auth.wasm", buffer);
   return new Uint8Array(buffer);
+}
+
+function getMemoryUsage() {
+  if (performance.memory) {
+    return {
+      heapUsedMB: (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2),
+      totalHeapMB: (performance.memory.totalJSHeapSize / 1024 / 1024).toFixed(
+        2
+      ),
+      jsHeapLimitMB: (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(
+        2
+      ),
+    };
+  } else {
+    return {
+      heapUsedMB: "unsupported",
+      totalHeapMB: "unsupported",
+      jsHeapLimitMB: "unsupported",
+    };
+  }
 }
 
 /**
@@ -90,8 +115,11 @@ export async function generateZKPProof(
   const zkeyPath = `${import.meta.env.BASE_URL}keys/circuit_final.zkey`;
 
   try {
+    const totalStart = performance.now();
+
     console.log("Preparing ZKP inputs...");
 
+    const prepStart = performance.now();
     // Validate input formats
     if (!privKey || typeof privKey !== "string") {
       throw new Error(`Invalid privKey format: ${privKey}`);
@@ -128,17 +156,28 @@ export async function generateZKPProof(
       direction: pathIndices, // array of 0s and 1s indicating left/right
     };
 
+    const prepEnd = performance.now();
+
     console.log("Generating ZKP proof with formatted inputs...");
 
     // Load the zkey and wasm files
+    const loadStart = performance.now();
     const zkeyBuffer = await loadZkey();
     const wasmBuffer = await loadWasm();
+    const loadEnd = performance.now();
 
+    const proofStart = performance.now();
     const { proof, publicSignals } = await groth16.fullProve(
       input,
-      wasmPath,
-      zkeyPath
+      wasmBuffer,
+      zkeyBuffer
     );
+    const mem = getMemoryUsage();
+    console.log(
+      `🧠 Memory usage: ${mem.heapUsedMB} MB used / ${mem.totalHeapMB} MB total`
+    );
+
+    const proofEnd = performance.now();
 
     // if (!proof) {
     //   throw new Error("ZKP proof generation failed: No proof returned");
@@ -148,9 +187,18 @@ export async function generateZKPProof(
     // }
     // console.log("ZKP proof and public signals generated successfully");
 
+    const totalEnd = performance.now();
     console.log("Public Signals:", JSON.stringify(publicSignals));
     console.dir(publicSignals);
-    return { proof, publicSignals };
+    return {
+      auth: { proof, publicSignals },
+      timings: {
+        prepareTime: prepEnd - prepStart,
+        loadTime: loadEnd - loadStart,
+        proofTime: proofEnd - proofStart,
+        totalTime: totalEnd - totalStart,
+      }, memory: mem,
+    };
   } catch (error) {
     console.error("Error generating ZKP proof:", error);
     throw new Error(`ZKP proof generation failed: ${error.message}`);

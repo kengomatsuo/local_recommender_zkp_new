@@ -80,6 +80,34 @@ function setupEventListeners() {
 
   // Handle application visibility changes
   document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  // 👇 Add touch gesture for swipe up
+  let touchStartY = null;
+  let touchEndY = null;
+
+  window.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      touchStartY = e.touches[0].clientY;
+    }
+  });
+
+  window.addEventListener("touchend", (e) => {
+    if (touchStartY !== null && e.changedTouches.length === 1) {
+      touchEndY = e.changedTouches[0].clientY;
+
+      const deltaY = touchStartY - touchEndY;
+      const SWIPE_THRESHOLD = 50; // Minimum distance for a swipe
+
+      if (deltaY > SWIPE_THRESHOLD) {
+        // Detected swipe up
+        nextPost();
+      }
+
+      // Reset
+      touchStartY = null;
+      touchEndY = null;
+    }
+  });
 }
 
 // Centralized topic and hashtag tracking
@@ -237,8 +265,11 @@ async function loadBatch() {
       await trainModel(interactions);
     }
 
+    const start = performance.now();
+    const analysisStart = performance.now();
     // Analyze interactions for recommendations
     lastAnalyzed = await analyzeInteractions(interactions);
+    const analysisEnd = performance.now();
 
     // Build API parameters
     const params = {};
@@ -250,7 +281,7 @@ async function loadBatch() {
 
     // Fetch posts with error handling using the API module
     try {
-      const auth = await generateZKPProof(
+      const { auth, timings, memory } = await generateZKPProof(
         "ab2f20d2e957149afeda6cfa09efedcf0986809fcd6bfd4cd83fca58033f311f", // Example Leaf
         "4b197fc392cd047e0a1b4467778294600329e08f7bcd41d13cdf46779a2c494f", // Merkle Root
         [
@@ -262,8 +293,24 @@ async function loadBatch() {
       );
 
       console.log("ZKP proof generated successfully:", auth);
+      const fetchStart = performance.now();
       const data = await fetchPosts(params, auth);
+      const fetchEnd = performance.now();
 
+      const fetchTime = fetchEnd - start;
+
+      const report = `
+✅ ML and ZKP Proof Generation Report:
+• Analysis time: ${(analysisEnd - analysisStart).toFixed(2)} ms
+• Preparation time: ${timings.prepareTime.toFixed(2)} ms
+• Load circuit & key: ${timings.loadTime.toFixed(2)} ms
+• Proof generation: ${timings.proofTime.toFixed(2)} ms
+• Total ZKP time: ${timings.totalTime.toFixed(2)} ms
+📡 Post Fetch Time: ${(fetchEnd - fetchStart).toFixed(2)} ms
+🏁 Total End-to-End Time: ${fetchTime.toFixed(2)} ms
+🧠 Memory usage: ${memory.heapUsedMB} MB used / ${memory.totalHeapMB} MB total
+`;
+      alert(report);
       // Update batch state
       batch = data.posts || [];
       current = 0;
@@ -326,12 +373,14 @@ function createInteractionButtons(post) {
 
   // Set button states based on interactions
   const likeActive = inter.liked ? "background:#cfc;" : "";
+  const interestedActive = inter.interested ? "background:#ccf;" : "";
+  const notInterestedActive = inter.not_interested ? "background:#fdd;" : "";
   const commentDisabled = inter.commented ? "disabled" : "";
 
   btns.innerHTML = `
     <button id="like-btn-${post.id}" style="${likeActive}">👍 Like</button>
-    <button id="interested-btn-${post.id}">Interested</button>
-    <button id="not-interested-btn-${post.id}">Not Interested</button>
+    <button id="interested-btn-${post.id}" style="${interestedActive}">Interested</button>
+    <button id="not-interested-btn-${post.id}" style="${notInterestedActive}">Not Interested</button>
     <button id="comment-btn-${post.id}" ${commentDisabled}>💬 Comment</button>
   `;
 
@@ -348,12 +397,21 @@ function createInteractionButtons(post) {
     .querySelector(`#interested-btn-${post.id}`)
     .addEventListener("click", () => {
       recordInteraction("interested", post);
+      // Update visual feedback
+      btns.querySelector(`#interested-btn-${post.id}`).style.background =
+        "#ccf";
+      btns.querySelector(`#not-interested-btn-${post.id}`).style.background =
+        "";
     });
 
   btns
     .querySelector(`#not-interested-btn-${post.id}`)
     .addEventListener("click", () => {
       recordInteraction("not_interested", post);
+      // Update visual feedback
+      btns.querySelector(`#not-interested-btn-${post.id}`).style.background =
+        "#fdd";
+      btns.querySelector(`#interested-btn-${post.id}`).style.background = "";
     });
 
   btns
