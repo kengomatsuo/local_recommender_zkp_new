@@ -43,7 +43,7 @@ const vKey = JSON.parse(fs.readFileSync(path.join(__dirname, "keys", "vk.json"))
 // Verify ZKP before allowing post fetch
 app.use('/api/posts', async (req, res, next) => {
   console.log("🔍 Incoming request to /api/posts");
-  console.log("Headers received:", Object.keys(req.headers));
+  // console.log("Headers received:", Object.keys(req.headers));
 
   const proofHeader = req.headers['x-zkp-proof'];
   const publicSignalsHeader = req.headers['x-zkp-publicsignals'];
@@ -57,8 +57,8 @@ app.use('/api/posts', async (req, res, next) => {
     const proof = JSON.parse(proofHeader);
     const publicSignals = JSON.parse(publicSignalsHeader);
 
-    console.log("📦 Parsed ZKP Proof:", JSON.stringify(proof, null, 2));
-    console.log("📦 Parsed Public Signals:", JSON.stringify(publicSignals, null, 2));
+    // console.log("📦 Parsed ZKP Proof:", JSON.stringify(proof, null, 2));
+    // console.log("📦 Parsed Public Signals:", JSON.stringify(publicSignals, null, 2));
 
     const isValid = await groth16.verify(vKey, publicSignals, proof);
 
@@ -81,7 +81,7 @@ app.use('/api/posts', async (req, res, next) => {
     //   return res.status(403).json({ error: 'Merkle root mismatch' });
     // }
 
-    console.log("✅ ZKP verified successfully with correct Merkle root");
+    console.log("✅ ZKP verified successfully");
     req.authenticated = true;
     next();
 
