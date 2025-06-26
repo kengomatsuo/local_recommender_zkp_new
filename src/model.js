@@ -130,16 +130,22 @@ export async function trainModel(interactionsArr, usePreviousData = true) {
     for (const inter of recentInteractions) {
       if (!inter.topics || !Array.isArray(inter.topics)) continue;
       let preferenceScore = 0;
-      if (inter.liked) preferenceScore += WEIGHT_LIKED;
-      if (inter.interested) preferenceScore += WEIGHT_INTERESTED;
-      if (inter.not_interested) preferenceScore += WEIGHT_NOT_INTERESTED;
-      if (inter.commented) preferenceScore += WEIGHT_COMMENTED;
-      if (!inter.liked && !inter.interested && !inter.not_interested && !inter.commented) {
-        const time_watched = inter.timeSpentMs || 0;
-        const duration = inter.duration || 10000;
-        const timeRatio = time_watched / duration;
-        const timeScore = (timeRatio - 0.5) * 2;
-        preferenceScore += timeScore;
+      
+      // If not_interested is active, force score to -4
+      if (inter.not_interested) {
+        preferenceScore = WEIGHT_NOT_INTERESTED;
+      } else {
+        // Otherwise, calculate score normally
+        if (inter.liked) preferenceScore += WEIGHT_LIKED;
+        if (inter.interested) preferenceScore += WEIGHT_INTERESTED;
+        if (inter.commented) preferenceScore += WEIGHT_COMMENTED;
+        if (!inter.liked && !inter.interested && !inter.not_interested && !inter.commented) {
+          const time_watched = inter.timeSpentMs || 0;
+          const duration = inter.duration || 10000;
+          const timeRatio = time_watched / duration;
+          const timeScore = (timeRatio - 0.5) * 2;
+          preferenceScore += timeScore;
+        }
       }
       let engaged;
       if (preferenceScore <= -1.5) engaged = 0;
@@ -337,13 +343,19 @@ export function analyzeWithoutModel(interactions) {
   });
   for (const inter of interactions) {
     let score = 0;
-    if (inter.liked) score += WEIGHT_LIKED;
-    if (inter.interested) score += WEIGHT_INTERESTED;
-    if (inter.not_interested) score += WEIGHT_NOT_INTERESTED;
-    if (inter.commented) score += WEIGHT_COMMENTED;
-    const timeRatio = inter.timeSpentMs / (inter.duration || 10000);
-    if (timeRatio > 0.7) score += 1;
-    if (timeRatio < 0.2) score -= 1;
+    
+    // If not_interested is active, force score to -4
+    if (inter.not_interested) {
+      score = WEIGHT_NOT_INTERESTED;
+    } else {
+      // Otherwise, calculate score normally
+      if (inter.liked) score += WEIGHT_LIKED;
+      if (inter.interested) score += WEIGHT_INTERESTED;
+      if (inter.commented) score += WEIGHT_COMMENTED;
+      const timeRatio = inter.timeSpentMs / (inter.duration || 10000);
+      if (timeRatio > 0.7) score += 1;
+      if (timeRatio < 0.2) score -= 1;
+    }
     (inter.topics || []).forEach(topic => {
       if (topicScores[topic]) {
         if (score > 0) topicScores[topic].positive += score;
