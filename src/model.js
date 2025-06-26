@@ -353,8 +353,8 @@ export function analyzeWithoutModel(interactions) {
       if (inter.interested) score += WEIGHT_INTERESTED;
       if (inter.commented) score += WEIGHT_COMMENTED;
       const timeRatio = inter.timeSpentMs / (inter.duration || 10000);
-      if (timeRatio > 0.7) score += 1;
-      if (timeRatio < 0.2) score -= 1;
+      const timeScore = (timeRatio - 0.5) * 2;
+      score += timeScore;
     }
     (inter.topics || []).forEach(topic => {
       if (topicScores[topic]) {
