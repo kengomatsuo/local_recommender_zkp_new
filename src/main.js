@@ -28,6 +28,9 @@ import {
   WEIGHT_NOT_INTERESTED,
   WEIGHT_COMMENTED,
   MIN_INTERACTIONS,
+  manualExportModel,
+  forceTrainModelForTesting,
+  checkTensorFlowStatus,
 } from "./model.js";
 import { fetchPosts, generateZKPProof } from "./api.js";
 
@@ -488,6 +491,14 @@ function onKey(e) {
   } else if (e.key === "ArrowUp") {
     prevPost();
     e.preventDefault();
+  } else if (e.key === "e" || e.key === "E") {
+    // Export model with 'E' key
+    manualExportModel();
+    e.preventDefault();
+  } else if (e.key === "t" || e.key === "T") {
+    // Force train model with 'T' key (for testing)
+    forceTrainModelForTesting();
+    e.preventDefault();
   }
 }
 
@@ -627,5 +638,16 @@ if (typeof module !== "undefined" && module.exports) {
     trainModel,
     nextPost,
     prevPost,
+    manualExportModel,
   };
+}
+
+// Make manualExportModel available globally for testing
+if (typeof window !== "undefined") {
+  window.manualExportModel = manualExportModel;
+  window.exportModel = manualExportModel; // alias
+  window.forceTrainModel = forceTrainModelForTesting; // for quick testing
+  window.trainModel = forceTrainModelForTesting; // shorter alias
+  window.checkTensorFlow = checkTensorFlowStatus; // debug function
+  window.debugTF = checkTensorFlowStatus; // shorter alias
 }

@@ -57,10 +57,12 @@ app.use('/api/posts', async (req, res, next) => {
     const proof = JSON.parse(proofHeader);
     const publicSignals = JSON.parse(publicSignalsHeader);
 
-    // console.log("📦 Parsed ZKP Proof:", JSON.stringify(proof, null, 2));
-    // console.log("📦 Parsed Public Signals:", JSON.stringify(publicSignals, null, 2));
-
+    // Log verification start time
+    const start = process.hrtime.bigint();
     const isValid = await groth16.verify(vKey, publicSignals, proof);
+    const end = process.hrtime.bigint();
+    const durationMs = Number(end - start) / 1_000_000;
+    console.log(`⏱️ ZKP verification took ${durationMs.toFixed(2)} ms`);
 
     if (!isValid) {
       console.warn("❌ ZKP verification failed");

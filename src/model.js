@@ -29,39 +29,83 @@ export async function loadModel(force = false) {
     }
     if (!tfModel || force) {
       if (MODEL_TOPICS.length === 0) {
+        console.log('❌ No topics available, cannot create model');
         tfModel = null;
         modelTrained = false;
         return;
       }
-      if (tfModel) {
-        try { tfModel.dispose(); } catch (e) { }
+      
+      // Check if tf is available
+      if (typeof tf === 'undefined') {
+        throw new Error('TensorFlow.js not loaded. Make sure tf is available globally.');
       }
+      
+      console.log(`🏗️ Creating model with ${MODEL_TOPICS.length} input features...`);
+      
+      // Store the current training state before recreating the model
+      const wasModelTrained = modelTrained && !force;
+      
+      if (tfModel) {
+        try { 
+          tfModel.dispose(); 
+          console.log('🗑️ Disposed previous model');
+        } catch (e) { 
+          console.log('⚠️ Error disposing model:', e);
+        }
+      }
+      
+      // Create model architecture
       tfModel = tf.sequential();
+      
+      const inputUnits = Math.max(16, MODEL_TOPICS.length);
+      console.log(`Adding layers: input(${MODEL_TOPICS.length}) -> dense(${inputUnits}) -> dense(8) -> output(3)`);
+      
       tfModel.add(tf.layers.dense({
         inputShape: [MODEL_TOPICS.length],
-        units: Math.max(16, MODEL_TOPICS.length),
+        units: inputUnits,
         activation: "relu",
-        kernelRegularizer: tf.regularizers.l2(0.001)
+        kernelRegularizer: tf.regularizers.l2({ l2: 0.001 })
       }));
+      
       tfModel.add(tf.layers.dense({
         units: 8,
         activation: "relu",
-        kernelRegularizer: tf.regularizers.l2(0.001)
+        kernelRegularizer: tf.regularizers.l2({ l2: 0.001 })
       }));
+      
       tfModel.add(tf.layers.dense({
         units: 3,
         activation: "softmax"
       }));
+      
+      // Compile the model
       const optimizer = tf.train.adam(0.001);
       tfModel.compile({
         optimizer: optimizer,
         loss: "categoricalCrossentropy",
         metrics: ["accuracy"]
       });
-      modelTrained = false;
+      
+      console.log(`✅ Model created and compiled successfully with ${tfModel.layers.length} layers`);
+      
+      // Note: tfModel.compiled property may not be reliable in all TensorFlow.js versions
+      // The successful compilation is confirmed by reaching this point without errors
+      
+      // Only reset modelTrained if we're forcing a reload (during training)
+      // If we're just checking/loading existing model, preserve training state
+      if (force) {
+        modelTrained = false;
+      } else {
+        modelTrained = wasModelTrained;
+      }
+      
+      console.log(`Model state: layers=${tfModel.layers.length}, trained=${modelTrained}`);
     }
   } catch (error) {
+    console.error('❌ Error in loadModel:', error);
+    tfModel = null;
     modelTrained = false;
+    throw error; // Re-throw to handle in calling function
   }
 }
 
@@ -111,14 +155,217 @@ export function loadStoredResults() {
   }
 }
 
+// Export model to downloads folder with improved user feedback
+export async function exportModelToDownloads() {
+  if (!tfModel || !modelTrained) {
+    const message = 'No trained model to export. Train the model first by interacting with posts!';
+    console.warn(message);
+    alert(message);
+    return false;
+  }
+
+  try {
+    // Create a timestamp for the filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const modelName = `recommender-model-${timestamp}`;
+    
+    // Create model metadata
+    const metadata = {
+      exportTime: new Date().toISOString(),
+      modelTopics: [...MODEL_TOPICS],
+      modelHashtags: [...MODEL_HASHTAGS],
+      previousTopicsResults: [...previousTopicsResults],
+      previousHashtagsResults: [...previousHashtagsResults],
+      modelArchitecture: {
+        inputShape: tfModel.layers[0].inputShape,
+        layers: tfModel.layers.map(layer => ({
+          type: layer.constructor.name,
+          units: layer.units || null,
+          activation: layer.activation?.name || null
+        }))
+      }
+    };
+
+    // Show user what's happening
+    console.log(`🚀 Exporting model as ${modelName}...`);
+    alert(`🚀 Exporting model! Check your Downloads folder for:\n• ${modelName}.json (model)\n• ${modelName}.weights.bin (weights)\n• ${modelName}-metadata.json (metadata)`);
+    
+    // Save the model to downloads (triggers browser download)
+    await tfModel.save(`downloads://${modelName}`);
+    
+    // Also save metadata as a JSON file
+    const metadataBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+    const metadataUrl = URL.createObjectURL(metadataBlob);
+    const metadataLink = document.createElement('a');
+    metadataLink.href = metadataUrl;
+    metadataLink.download = `${modelName}-metadata.json`;
+    metadataLink.style.display = 'none';
+    document.body.appendChild(metadataLink);
+    metadataLink.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(metadataLink);
+      URL.revokeObjectURL(metadataUrl);
+    }, 100);
+
+    const successMessage = `✅ Model exported successfully!\n\nFiles saved to Downloads:\n• ${modelName}.json\n• ${modelName}.weights.bin\n• ${modelName}-metadata.json`;
+    console.log(successMessage);
+    alert(successMessage);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to export model:', error);
+    
+    // Try alternative export method if downloads:// fails
+    try {
+      console.log('Attempting alternative export method...');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const modelName = `recommender-model-${timestamp}`;
+      
+      // Use IndexedDB as fallback
+      await tfModel.save(`indexeddb://${modelName}`);
+      const fallbackMessage = `✅ Model saved to browser storage as fallback: ${modelName}`;
+      console.log(fallbackMessage);
+      alert(fallbackMessage);
+      return true;
+    } catch (fallbackError) {
+      const errorMessage = `❌ Export failed completely: ${fallbackError.message}`;
+      console.error(errorMessage);
+      alert(errorMessage);
+      return false;
+    }
+  }
+}
+
+// Manual export function for testing
+export function manualExportModel() {
+  console.log('🔧 Manual export requested...');
+  console.log(`Model status: ${modelTrained ? 'Trained' : 'Not trained'}`);
+  console.log(`Topics available: ${MODEL_TOPICS.length}`);
+  console.log(`Hashtags available: ${MODEL_HASHTAGS.length}`);
+  
+  if (modelTrained) {
+    return exportModelToDownloads();
+  } else {
+    const message = `❌ Cannot export: Model not trained yet!\n\nStatus:\n• Topics: ${MODEL_TOPICS.length}\n• Hashtags: ${MODEL_HASHTAGS.length}\n• Model: ${modelTrained ? 'Trained' : 'Not trained'}\n\nInteract with posts to train the model first!`;
+    console.log(message);
+    alert(message);
+    return false;
+  }
+}
+
+// Debug function to check TensorFlow availability
+export function checkTensorFlowStatus() {
+  const status = {
+    tfAvailable: typeof tf !== 'undefined',
+    tfVersion: typeof tf !== 'undefined' ? tf.version.tfjs : 'N/A',
+    modelExists: !!tfModel,
+    modelLayers: tfModel?.layers?.length || 0,
+    modelIsCompiled: tfModel?.layers?.length > 0 && tfModel.optimizer != null,
+    modelTrained,
+    topicsCount: MODEL_TOPICS.length,
+    hashtagsCount: MODEL_HASHTAGS.length
+  };
+  
+  console.log('🔍 TensorFlow Status:', status);
+  return status;
+}
+
+// Force train model with dummy data for testing
+export async function forceTrainModelForTesting() {
+  console.log('🧪 Force training model with dummy data for testing...');
+  
+  // Ensure we have some topics and hashtags
+  if (MODEL_TOPICS.length === 0) {
+    MODEL_TOPICS.push('technology', 'ai', 'science', 'programming', 'javascript', 'web', 'mobile', 'data');
+    console.log('📝 Added topics:', MODEL_TOPICS);
+  }
+  if (MODEL_HASHTAGS.length === 0) {
+    MODEL_HASHTAGS.push('#tech', '#ai', '#science', '#programming', '#js', '#web', '#mobile', '#data');
+    console.log('📝 Added hashtags:', MODEL_HASHTAGS);
+  }
+  
+  // Create dummy interactions
+  const dummyInteractions = [];
+  for (let i = 0; i < 15; i++) {
+    const topicSelection = MODEL_TOPICS.slice(0, Math.floor(Math.random() * 3) + 1);
+    const hashtagSelection = MODEL_HASHTAGS.slice(0, Math.floor(Math.random() * 2) + 1);
+    
+    const interaction = {
+      postId: `dummy-${i}`,
+      topics: topicSelection,
+      hashtags: hashtagSelection,
+      liked: Math.random() > 0.7,
+      interested: Math.random() > 0.6,
+      not_interested: Math.random() > 0.8,
+      commented: Math.random() > 0.9,
+      timeSpentMs: Math.floor(Math.random() * 10000) + 1000,
+      timestamp: Date.now() + i * 1000
+    };
+    
+    dummyInteractions.push(interaction);
+  }
+  
+  console.log(`Created ${dummyInteractions.length} dummy interactions`);
+  console.log('Sample interaction:', dummyInteractions[0]);
+  
+  // Train the model
+  console.log('🚀 Starting training...');
+  await trainModel(dummyInteractions);
+  
+  console.log(`Training completed. Model trained: ${modelTrained}`);
+  
+  // Additional verification
+  console.log('🔍 Final verification:', {
+    modelTrained,
+    hasModel: !!tfModel,
+    modelLayers: tfModel ? tfModel.layers.length : 0,
+    topicsCount: MODEL_TOPICS.length,
+    hashtagsCount: MODEL_HASHTAGS.length
+  });
+  
+  return modelTrained;
+}
+
 // Train model with option to use previous data
 export async function trainModel(interactionsArr, usePreviousData = true) {
-  if (modelTraining || MODEL_TOPICS.length === 0) return;
+  console.log('🔄 trainModel called with:', {
+    interactionsLength: interactionsArr?.length,
+    modelTraining,
+    topicsLength: MODEL_TOPICS.length,
+    minInteractions: MIN_INTERACTIONS,
+    tfAvailable: typeof tf !== 'undefined'
+  });
+  
+  // Check if TensorFlow is available
+  if (typeof tf === 'undefined') {
+    const error = 'TensorFlow.js not available. Make sure tf is loaded globally.';
+    console.error('❌', error);
+    return false;
+  }
+  
+  if (modelTraining || MODEL_TOPICS.length === 0) {
+    console.log('❌ Early return:', { modelTraining, topicsLength: MODEL_TOPICS.length });
+    return;
+  }
   const interactions = interactionsArr;
-  if (interactions.length < MIN_INTERACTIONS) return;
+  if (interactions.length < MIN_INTERACTIONS) {
+    console.log('❌ Not enough interactions:', interactions.length, 'needed:', MIN_INTERACTIONS);
+    return;
+  }
+  
   let resolveTraining;
   try {
+    console.log('🏗️ Loading model...');
     await loadModel(true);
+    
+    // Verify model was created successfully
+    if (!tfModel || tfModel.layers.length === 0) {
+      throw new Error('Model creation failed - no model or no layers');
+    }
+    
+    console.log(`✅ Model verification passed: ${tfModel.layers.length} layers created`);
+    
     modelTraining = true;
     modelTrainingPromise = new Promise((r) => (resolveTraining = r));
     
@@ -126,9 +373,14 @@ export async function trainModel(interactionsArr, usePreviousData = true) {
     const recentInteractions = interactions.slice(-100);
     const xs = [], ys = [];
     
+    console.log(`📊 Processing ${recentInteractions.length} interactions...`);
+    
     // Process current interactions
     for (const inter of recentInteractions) {
-      if (!inter.topics || !Array.isArray(inter.topics)) continue;
+      if (!inter.topics || !Array.isArray(inter.topics)) {
+        console.log('⚠️ Skipping interaction with invalid topics:', inter);
+        continue;
+      }
       let preferenceScore = 0;
       if (inter.liked) preferenceScore += WEIGHT_LIKED;
       if (inter.interested) preferenceScore += WEIGHT_INTERESTED;
@@ -152,8 +404,11 @@ export async function trainModel(interactionsArr, usePreviousData = true) {
       ys.push(y);
     }
     
+    console.log(`📈 Created training data: ${xs.length} samples with ${xs[0]?.length || 0} features`);
+    
     // Add previous learned patterns if enabled
     if (usePreviousData && previousTopicsResults.length > 0) {
+      console.log('🔄 Adding previous learned patterns...');
       // Use previous topic results to augment training
       for (const prevTopics of previousTopicsResults) {
         const prevTopicNames = prevTopics.map(t => t.name);
@@ -169,27 +424,54 @@ export async function trainModel(interactionsArr, usePreviousData = true) {
           ys.push(y);
         }
       }
+      console.log(`📈 Total training data after augmentation: ${xs.length} samples`);
     }
     
     if (xs.length > 0 && xs[0].length > 0) {
+      console.log('🚀 Starting model training...');
+      console.log(`Model compiled: ${tfModel.compiled}, layers: ${tfModel.layers.length}`);
+      
       const xsTensor = tf.tensor2d(xs);
       const ysTensor = tf.tensor2d(ys);
       try {
-        await tfModel.fit(xsTensor, ysTensor, {
+        const history = await tfModel.fit(xsTensor, ysTensor, {
           epochs: 25,
           batchSize: 8,
           validationSplit: 0.2,
         });
+        
+        console.log('✅ Training completed successfully!');
+        console.log('📊 Final loss:', history.history.loss[history.history.loss.length - 1]);
+        
         modelTrained = true;
+        console.log('✅ Model trained flag set to:', modelTrained);
+        
+        // Automatically export the model after successful training
+        console.log('Training completed successfully, exporting model...');
+        const exportSuccess = await exportModelToDownloads();
+        if (exportSuccess) {
+          console.log('Model exported to downloads folder');
+        } else {
+          console.warn('Model training succeeded but export failed');
+        }
       } finally {
         xsTensor.dispose();
         ysTensor.dispose();
       }
+    } else {
+      console.log('❌ No valid training data created');
     }
   } catch (error) {
+    console.error('❌ Training failed with error:', error);
     modelTrained = false;
   } finally {
     modelTraining = false;
+    console.log('🏁 Training process finished. Final state:', {
+      modelTrained,
+      modelTraining,
+      hasModel: !!tfModel,
+      modelLayers: tfModel?.layers?.length || 0
+    });
     if (resolveTraining) resolveTraining();
     modelTrainingPromise = null;
   }
