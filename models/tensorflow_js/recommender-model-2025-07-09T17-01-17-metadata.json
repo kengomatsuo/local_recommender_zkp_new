@@ -1,0 +1,76 @@
+{
+  "exportTime": "2025-07-09T17:01:17.770Z",
+  "modelTopics": [
+    "music",
+    "jazz",
+    "genre",
+    "comedy",
+    "entertainment",
+    "show",
+    "pottery",
+    "handmade",
+    "class",
+    "granola",
+    "snack",
+    "homemade",
+    "hiking",
+    "adventure",
+    "exploration",
+    "art museum",
+    "modern art",
+    "exhibit",
+    "board games",
+    "fun",
+    "games",
+    "dessert",
+    "chocolate",
+    "baking",
+    "running",
+    "race",
+    "achievement",
+    "yoga",
+    "fitness"
+  ],
+  "modelHashtags": [
+    "music",
+    "jazz",
+    "comedy",
+    "fun",
+    "pottery",
+    "handmade",
+    "granola",
+    "snack",
+    "adventure",
+    "explore",
+    "artmuseum",
+    "modernart",
+    "boardgames",
+    "dessert",
+    "chocolate",
+    "running",
+    "achievement",
+    "yoga",
+    "progress"
+  ],
+  "previousTopicsResults": [],
+  "previousHashtagsResults": [],
+  "modelArchitecture": {
+    "layers": [
+      {
+        "type": "n",
+        "units": 29,
+        "activation": null
+      },
+      {
+        "type": "n",
+        "units": 8,
+        "activation": null
+      },
+      {
+        "type": "n",
+        "units": 3,
+        "activation": null
+      }
+    ]
+  }
+}
