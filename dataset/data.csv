@@ -1,27 +1,27 @@
-Model,CPU,CPU Mark,RAM,Average Proof Generation Time,Average Analysis Time,Column 17,Proof Generation Time 1,Analysis time 1,Proof Generation Time 2,Analysis time 2,Proof Generation Time 3,Analysis time 3,Proof Generation Time 4,Analysis time 4,Proof Generation Time 5,Analysis time 5
-Macbook Pro M4,Apple Silicon M4 Pro,33050,24,2648,0.65,151.19,2648,0,,,,,,1.3,,
-ROG Strix G614,Intel Core i7-13650HX,30814,16,3523.2,0.44,137.17,4082,0,3454,0,3320,1.5,3324,0,3436,0.7
-Macbook M3,Apple Silicon M3,19191,16,3968.08,0.34,132.72,3946.3,0.1,4058.3,0.1,3917.9,0,3879.6,0.4,4038.3,1.1
-Victus by HP Laptop 16,Intel Core i7-11800H,20083,16,4391.4,0.64,158.78,5234,0,4156,0,4112,2.1,4187,0.5,4268,0.6
-PC,Ryzen 5700X,26634,32,4427.666667,0,167.07,4447.5,0,3912.3,0,4923.2,0,,,,
-Acer Aspire 7,Intel Core i5-12450H,16403,24,4870.6,0.2,242.36,5182,0,4942,0,4837,1,4753,0,4639,0
-TUF ,intel Core i9-13900H,27855,32,4871.6,0.1,162.92,4871.6,0.1,,,,,,,,
-iPad Pro M2,Apple Silicon M2,15649,8,4961,0,,4961,0,,,,,,,,
-Legion 5 Pro,AMD Ryzen 7 5800H,20854,16,5066.4,0.48,,5815,0.2,4669,0,4908,1.1,4981,0.5,4959,0.6
-Samsung Z Flip 6,Qualcomm Snapdragon 8 Gen 3,11817,8,5939,0,,5939,0,,,,,,,,
-Dell G7,Intel Core i7-10750,11661,16,6067,0.9,,6226,0,6016,0,6076,0.5,6031,2.1,5986,1.9
-IPhone 15 Pro Max,Apple A17 Pro,12235,8,6703.2,0.6,,6880,0,6670,0,6591,1,6699,2,6676,0
-IPhone 15 Pro Max,Apple A17 Pro,12235,8,7005.2,0.8,,7963,0,6808,0,6815,1,6695,2,6745,1
-iPhone 15 ,Apple A16 Bionic,10994,6,7197,0.6,,7500,0,7101,0,7144,0,7138,2,7102,1
-ASUS Zenbook 14 ux3042za,Intel Core i5-12450P,16674,16,7672.7,0,,7672.7,0,,,,,,,,
-Samsung Galaxy S23+,Qualcomm Snapdragon 8 Gen 2,9362,8,7813,3.62,,8242,0.1,7920,0,7581,10,7867,2.1,7455,5.9
-Samsung Galaxy S23 Ultra,Qualcomm Snapdragon 8 Gen 2,9362,12,9683,0.1,,9367.5,8.8,9054.4,1.9,,,,,,
-Iphone 13,Apple A15 Bionic,9897,4,9925.8,3.6,,10055,0,8844,1,10546,3,9153,6,11031,8
-Oppo Find X8,MediaTek Dimensity 9400,12506,12,10103.4,4.36,,10212,0,10417,0,10190,16.2,9892,2.4,9806,3.2
-Samsung Galaxy Tab S8 Ultra 5G,Qualcomm Snapdragon 8 Gen 1 (SM8450),7023,12,10274,0,,9661,0,9753,4.4,9458,5.2,9564,,,
-iPhone 15 Pro Max,Apple A17 Pro,12235,8,12309,0,,12309,0,,,,,,,,
-Samsung Galaxy Note 20 Ultra,Samsung Exynos 990,6079,12,14080.6,4,,15105,0.2,13880,0,13801,14.2,13742,3.9,13875,1.7
-ASUS Zenbook 13 oled,Intel Core i7 11th gen,11643,16,14372,0,,14372,0,,,,,,,,
-iPhone 13,Apple A15 Bionic,9897,4,16204,0,,16204,0,,,,,,,,
-Samsung Galaxy S21 FE 5G,Samsung Exynos 2100 (S5E9840),5509,8,17222,0,,13893,0.1,13898,0,13322,5.4,12784,2.8,,
-Samsung Tab S7 FE,Qualcomm SM7225 Snapdragon 750G 5G,4277,6,18652.05,3.875,,18503,0.2,18954,0,18590,12.5,18561.2,2.8,,
+Model,CPU,CPU Mark,RAM,Average Proof Generation Time,Average Analysis Time,Proof Generation Time 1,Analysis time 1,Proof Generation Time 2,Analysis time 2,Proof Generation Time 3,Analysis time 3,Proof Generation Time 4,Analysis time 4,Proof Generation Time 5,Analysis time 5
+Macbook Pro M4,Apple Silicon M4 Pro,33050,24,2648,0.65,2648,0,,,,,,1.3,,
+ROG Strix G614,Intel Core i7-13650HX,30814,16,3523.2,0.44,4082,0,3454,0,3320,1.5,3324,0,3436,0.7
+Macbook M3,Apple Silicon M3,19191,16,3968.08,0.34,3946.3,0.1,4058.3,0.1,3917.9,0,3879.6,0.4,4038.3,1.1
+Victus by HP Laptop 16,Intel Core i7-11800H,20083,16,4391.4,0.64,5234,0,4156,0,4112,2.1,4187,0.5,4268,0.6
+PC,Ryzen 5700X,26634,32,4427.666667,0,4447.5,0,3912.3,0,4923.2,0,,,,
+Acer Aspire 7,Intel Core i5-12450H,16403,24,4870.6,0.2,5182,0,4942,0,4837,1,4753,0,4639,0
+TUF ,intel Core i9-13900H,27855,32,4871.6,0.1,4871.6,0.1,,,,,,,,
+iPad Pro M2,Apple Silicon M2,15649,8,4961,0,4961,0,,,,,,,,
+Legion 5 Pro,AMD Ryzen 7 5800H,20854,16,5066.4,0.48,5815,0.2,4669,0,4908,1.1,4981,0.5,4959,0.6
+Samsung Z Flip 6,Qualcomm Snapdragon 8 Gen 3,11817,8,5939,0,5939,0,,,,,,,,
+Dell G7,Intel Core i7-10750,11661,16,6067,0.9,6226,0,6016,0,6076,0.5,6031,2.1,5986,1.9
+IPhone 15 Pro Max,Apple A17 Pro,12235,8,6703.2,0.6,6880,0,6670,0,6591,1,6699,2,6676,0
+IPhone 15 Pro Max,Apple A17 Pro,12235,8,7005.2,0.8,7963,0,6808,0,6815,1,6695,2,6745,1
+iPhone 15 ,Apple A16 Bionic,10994,6,7197,0.6,7500,0,7101,0,7144,0,7138,2,7102,1
+ASUS Zenbook 14 ux3042za,Intel Core i5-12450P,16674,16,7672.7,0,7672.7,0,,,,,,,,
+Samsung Galaxy S23+,Qualcomm Snapdragon 8 Gen 2,9362,8,7813,3.62,8242,0.1,7920,0,7581,10,7867,2.1,7455,5.9
+Samsung Galaxy S23 Ultra,Qualcomm Snapdragon 8 Gen 2,9362,12,9683,0.1,9367.5,8.8,9054.4,1.9,,,,,,
+Iphone 13,Apple A15 Bionic,9897,4,9925.8,3.6,10055,0,8844,1,10546,3,9153,6,11031,8
+Oppo Find X8,MediaTek Dimensity 9400,12506,12,10103.4,4.36,10212,0,10417,0,10190,16.2,9892,2.4,9806,3.2
+Samsung Galaxy Tab S8 Ultra 5G,Qualcomm Snapdragon 8 Gen 1 (SM8450),7023,12,10274,0,9661,0,9753,4.4,9458,5.2,9564,,,
+iPhone 15 Pro Max,Apple A17 Pro,12235,8,12309,0,12309,0,,,,,,,,
+Samsung Galaxy Note 20 Ultra,Samsung Exynos 990,6079,12,14080.6,4,15105,0.2,13880,0,13801,14.2,13742,3.9,13875,1.7
+ASUS Zenbook 13 oled,Intel Core i7 11th gen,11643,16,14372,0,14372,0,,,,,,,,
+iPhone 13,Apple A15 Bionic,9897,4,16204,0,16204,0,,,,,,,,
+Samsung Galaxy S21 FE 5G,Samsung Exynos 2100 (S5E9840),5509,8,17222,0,13893,0.1,13898,0,13322,5.4,12784,2.8,,
+Samsung Tab S7 FE,Qualcomm SM7225 Snapdragon 750G 5G,4277,6,18652.05,3.875,18503,0.2,18954,0,18590,12.5,18561.2,2.8,,
